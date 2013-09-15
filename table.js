@@ -31,8 +31,8 @@ function each(a, iter) {
 
 function tree (a, len) {
   var cur, acc = [], result = {}, tree = []
-  function key (r) {
-    return 'object' === typeof r ? r.pre.substring(0, len) : r.substring(0, len)
+  function key (r, k) {
+    return 'object' === typeof r ? k.substring(0, len) : r.substring(0, len)
   }
 
   function value (r) {
@@ -41,23 +41,17 @@ function tree (a, len) {
 
   each(a, function (r, k) {
     if(!cur) {
-      cur = key(r)
+      cur = key(r, k)
       acc = [], tree = []
     }
-    var pre = key(r)
+    var pre = key(r, k)
     if(pre === cur) {
       acc.push(value(r))
       tree.push(r)
     } else {
       var _tree = 
           tree.length > 1
-          ? tree.reduce(function (acc, item) {
-              if(item.pre)
-                acc.push(item)
-              else
-                acc.push(item)
-              return acc
-            }, [])
+          ? levelOne(tree, len + 1)
           : tree
 
       //console.log(acc.length, acc)
@@ -76,6 +70,8 @@ function tree (a, len) {
 
 function wholeTree(a, depth) {
   //console.log(tree)
+  if(depth == null)
+    depth = maxPrefix(a)
   if(depth === 1)
     return tree(a, 1)
   return wholeTree(tree(a, depth), depth - 1)
@@ -90,9 +86,25 @@ function prefix(a, b) {
       return 1 + +i
 }
 
-function levelOne(a) {
-  var m = maxPrefix(a)
-  return tree(a, m)
+function levelOne(a, m) {
+//  console.log(a)
+
+  var t = {}//tree(a, m)
+  var o = {}
+  for(var i in a) {
+    var v = a[i].pre || a[i]
+    if(!v.substring) {
+      console.log(a[i])
+    }
+
+    t[v.substring(0, m)] = a[i]
+  }
+  if(a.length != Object.keys(t).length) {
+    console.log(a)
+    console.log(t)
+    throw new Error('wrong length')
+  }
+  return t
 }
 
 function maxPrefix (a) {
@@ -117,6 +129,7 @@ var a = table(8)
 console.log(Date.now() - START, hashes)
 console.log(maxPrefix(a))
 var m = maxPrefix(a)
-var result = tree(tree(tree(a, m), m - 1), m - 2)
+//var result = tree(tree(tree(a, m), m - 1), m - 2)
+var result = wholeTree(a)
 console.log(JSON.stringify(result, null, 2))
 
