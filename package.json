@@ -10,7 +10,8 @@
   "dependencies": {
     "pull-stream": "~2.20.1",
     "shasum": "~1.0.0",
-    "pull-window": "~2.1.2"
+    "pull-window": "~2.1.2",
+    "tape": "~1.1.0"
   },
   "devDependencies": {},
   "scripts": {
