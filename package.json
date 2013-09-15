@@ -1,0 +1,21 @@
+{
+  "name": "pull-merkle",
+  "description": "",
+  "version": "0.0.0",
+  "homepage": "https://github.com/dominictarr/pull-merkle",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dominictarr/pull-merkle.git"
+  },
+  "dependencies": {
+    "pull-stream": "~2.20.1",
+    "shasum": "~1.0.0",
+    "pull-window": "~2.1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "set -e; for t in test/*.js; do node $t; done"
+  },
+  "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT"
+}
