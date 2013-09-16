@@ -6,13 +6,42 @@ function hash(x) {
   hashes ++
   return crypto.createHash('sha1').update(x, 'hex').digest('hex')
 }
-
+exports.hash = hash
 exports.table = table
 exports.maxPrefix = maxPrefix
 exports.startsWith = startsWith
 exports.group = group
 exports.merkleize = merkleize
 exports.tree = tree
+exports.prefixes = prefixes
+
+function prefixes (a, depth) {
+  depth = depth || 0
+  if(a.length === 1) {
+    //console.log(a)
+    return a[0]
+  }
+
+  var o = {}
+  for(var i in a) {
+    var v = a[i]
+    var p = v.substring(0, depth)
+    if(o[p])
+      o[p].push(v)
+    else
+      o[p] = [v]
+  }
+  var h = crypto.createHash('sha1')
+  for(var k in o) {
+    o[k] = prefixes(o[k], depth + 1)
+    h.update(o[k].hash || o[k], 'hex')
+  }
+
+  return {
+    hash: h.digest('hex'), tree: o
+  }
+}
+
 
 function startsWith(a, prefix) {
   OBJECTS ++ 
@@ -150,14 +179,14 @@ function maxPrefix (a) {
 
 
 if(!module.parent) {
-  var a = table(12)
+  var a = table(16)
 
   START = Date.now()
 //  console.log(maxPrefix(a))
   var H = hashes
   console.log(hashes)
-  var g = tree(a)
-  console.log(JSON.stringify(g, null, 2))
+  var g = prefixes(a) //tree(a)
+//  console.log(JSON.stringify(g, null, 2))
   console.log(Date.now() - START, hashes - H, OBJECTS)
 }
 //
