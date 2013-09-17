@@ -13,35 +13,7 @@ exports.startsWith = startsWith
 exports.group = group
 exports.merkleize = merkleize
 exports.tree = tree
-exports.prefixes = prefixes
-
-function prefixes (a, depth) {
-  depth = depth || 0
-  if(a.length === 1) {
-    //console.log(a)
-    return a[0]
-  }
-
-  var o = {}
-  for(var i in a) {
-    var v = a[i]
-    var p = v.substring(0, depth)
-    if(o[p])
-      o[p].push(v)
-    else
-      o[p] = [v]
-  }
-  var h = crypto.createHash('sha1')
-  for(var k in o) {
-    o[k] = prefixes(o[k], depth + 1)
-    h.update(o[k].hash || o[k], 'hex')
-  }
-
-  return {
-    hash: h.digest('hex'), tree: o
-  }
-}
-
+exports.prefixes = require('./index')
 
 function startsWith(a, prefix) {
   OBJECTS ++ 
@@ -99,10 +71,6 @@ function tree (a) {
 
   return recurse(o, m)['']
 //  return 'string' === typeof g ? {hash: g} : g
-}
-
-function getHash(obj) {
-
 }
 
 function oneKey(obj) {
@@ -185,8 +153,8 @@ if(!module.parent) {
 //  console.log(maxPrefix(a))
   var H = hashes
   console.log(hashes)
-  var g = prefixes(a) //tree(a)
-//  console.log(JSON.stringify(g, null, 2))
+  var g = exports.prefixes(a) //tree(a)
+  console.log(JSON.stringify(g, null, 2))
   console.log(Date.now() - START, hashes - H, OBJECTS)
 }
 //
