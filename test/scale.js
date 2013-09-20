@@ -18,16 +18,17 @@ function count (tree) {
 }
 
 console.log('i, N, t, t/N, t/(N*log(N)), _t/t, H')
+
 var _t =  0.0001
 for(var i = 1; i <= 20; i++) {
-
   var a = util.table(i, 'binary')
   var start = Date.now()
   var g = tree(a)
   var t = Date.now() - start || 0.0001
   var N = 1 << i
+  var d = g.digest()
+  console.error(d)
   console.log([i, N, t, t/N, t / (N*Math.log(N)), _t/t, count(g)].join(', '))
-//  console.log(JSON.stringify(g, null, 2))
   _t = t
 }
-//console.log(JSON.stringify(g, null, 2))
+
