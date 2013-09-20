@@ -13,6 +13,7 @@ function Merkle (depth) {
 var proto = Merkle.prototype
 
 function intAt(hash, depth) {
+  //parse 'a' as 10
   var i = hash.charCodeAt(depth) - 87
   //but if it was a number, make it count from 0
   return (i < 0) ? i + 39 : i
@@ -29,36 +30,25 @@ proto.update = function (hash) {
         new Merkle(this.depth + 1).update(this.hash)
     }
 
-/*    if(this.last.prefix(hash)) {
-      this.last.update(hash)
-      return this
-    }*/
-    //this.tree[this.tree.length - 1]
-    //decide whether this hash is a child or a grandchild
+// this faster when hashes are in order,
+// but can only do in order.
+//    if(this.last.prefix(hash)) {
+//      this.last.update(hash)
+//      return this
+//    }
 
-    //if this did a binary search,
-    //then it could be used insertion style.
-
-    //parse 'a' as 10
-
-    //var j = parseInt(hash[this.depth], 16)
-    //if(j != i)
-    //throw new Error(i + ' should be ' + j)
-  //  console.log(this.depth, i, hash)
-  //  console.log(i, hash[this.depth])
     var i = intAt(hash, this.depth)
     if(this.tree[i])
       this.tree[i].update(hash)
     else
       this.last = this.tree[i] = new Merkle(this.depth + 1).update(hash)
 
-    /*
-    if(this.last.prefix(hash)) {
-      this.last.update(hash)
-    } else {
-      this.tree.push(new Merkle(this.depth + 1).update(hash))
-    }
-    */
+//
+//    if(this.last.prefix(hash)) {
+//      this.last.update(hash)
+//    } else {
+//      this.tree.push(new Merkle(this.depth + 1).update(hash))
+//    }
  
   }
   return this
