@@ -4,10 +4,12 @@ var crypto = require('crypto')
 //construct an optimally shallow hash tree.
 
 module.exports = function prefixes (array, depth) {
-  depth = depth || 0
+  depth = depth || 1
   if(array.length === 1) {
     return array[0]
   }
+
+//  var prefix = array[0].substring(0, depth)
 
   var o = {}
   for(var i in array) {
@@ -19,13 +21,16 @@ module.exports = function prefixes (array, depth) {
       o[p] = [v]
   }
   var h = crypto.createHash('sha1')
+  var b = []
   for(var k in o) {
-    o[k] = prefixes(o[k], depth + 1)
-    h.update(o[k].hash || o[k], 'hex')
+    var c
+    b.push(c = prefixes(o[k], depth + 1))
+    h.update(c.hash || c, 'hex')
   }
 
   return {
-    hash: h.digest('hex'), tree: o
+    pre: array[0].substring(0, depth - 1),
+    hash: h.digest('hex'), tree: b
   }
 }
 
