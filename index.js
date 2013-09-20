@@ -1,36 +1,101 @@
+
 var crypto = require('crypto')
 
-//given a sorted array of hashes
-//construct an optimally shallow hash tree.
+function Merkle (depth) {
+  this.hash = null
+  this.firstHash = null
+  this.last = null
+  this.tree = new Array(16)
+  this.depth = depth
+}
 
-module.exports = function prefixes (array, depth) {
-  depth = depth || 1
-  if(array.length === 1) {
-    return array[0]
+var proto = Merkle.prototype
+
+proto.update = function (hash) {
+  if(!this.firstHash) {
+    this.hash = this.firstHash = hash
+  } else {
+    if(!this.last) {
+      this.tree.push(this.last = new Merkle(this.depth + 1).update(this.hash))
+    }
+
+    //this.tree[this.tree.length - 1]
+    //decide whether this hash is a child or a grandchild
+
+    //if this did a binary search,
+    //then it could be used insertion style.
+
+    if(this.last.prefix(hash)) {
+      this.last.update(hash)
+    } else {
+      this.tree.push(new Merkle(this.depth + 1).update(hash))
+    }
   }
+  return this
+}
 
-//  var prefix = array[0].substring(0, depth)
+proto.prefix = function (hash) {
+  var d = this.depth
+  while(d--)
+    if(this.hash[d] !== hash[d])
+      return false
+  return true
+}
 
-  var o = {}
-  for(var i in array) {
-    var v = array[i]
-    var p = v.substring(0, depth)
-    if(o[p])
-      o[p].push(v)
-    else
-      o[p] = [v]
-  }
+proto.digest = function () {
+  var l = this.tree.length
+  if(!l)
+    return this.firstHash
+
   var h = crypto.createHash('sha1')
-  var b = []
-  for(var k in o) {
-    var c
-    b.push(c = prefixes(o[k], depth + 1))
-    h.update(c.hash || c, 'hex')
-  }
+
+  for(var i = 0; i < l; i ++)
+    h.update(this.tree[i].digest(), 'hex')
+
+  return this.hash = h.digest('hex')
+}
+
+proto.toJSON = function () {
+
+  if(!this.tree.length)
+    return this.hash
 
   return {
-    pre: array[0].substring(0, depth - 1),
-    hash: h.digest('hex'), tree: b
+    hash: this.hash,
+    tree: this.tree.map(function (e) {
+      return e.toJSON()
+    })
   }
+}
+
+Merkle.tree = function (a) {
+  var m = new Merkle(0)
+  a.forEach(function (h) {
+    m.update(h)
+  })
+  return m
+}
+
+//recreate the array used to create the tree.
+proto.leaves = function (a) {
+  a = a || []
+  if(!this.tree.length) {
+    if(this.hash) a.push(this.hash)
+    return a
+  }
+  trees.forEach(function (o) {
+    o.leaves(a)
+  })
+  return a
+}
+
+module.exports = Merkle
+
+if(!module.parent) {
+  var table = require('./util').table
+
+  var a = table(4)
+  var m = Merkle.tree(a)
+  console.log(JSON.stringify(m, null, 2))
 }
 
