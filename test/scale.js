@@ -16,19 +16,31 @@ function count (tree) {
     }
   return s + 1
 }
+var crypto = require('crypto')
+function hash (n) {
+  n = (n | 0).toString(16)
+  if(n.length % 2)
+    n = '0' + n
+  return crypto.createHash('sha1').update(n, 'hex').digest('hex')
+}
 
-console.log('i, N, t, t/N, t/(N*log(N)), _t/t, H')
+console.log('N, t, N/t')
 
 var _t =  0.0001
-for(var i = 1; i <= 20; i++) {
-  var a = util.table(i, 'binary')
+var sqrt2 = Math.pow(2, 0.25)
+var N = 1, j = 0
+var a = []
+//for(var i = 1; i <= 20; i ++) {
+while(N < (1 << 21)) {
+  while(a.length < N)
+    a.push(hash(j++))
   var start = Date.now()
   var g = tree(a)
+  
   var t = Date.now() - start || 0.0001
-  var N = 1 << i
   var d = g.digest()
-  console.error(d)
-  console.log([i, N, t, t/N, t / (N*Math.log(N)), _t/t, count(g)].join(', '))
+  console.log([~~N, t, N/t].join(', '))
   _t = t
+  N = N * sqrt2
 }
 
