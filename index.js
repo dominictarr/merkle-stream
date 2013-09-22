@@ -1,15 +1,13 @@
 var crypto = require('crypto')
 
-function Merkle (depth, hash) {
-  this.hash = hash
+function Merkle (depth) {
+  this.hash = null //hash
   this.tree = []
   this.pre = null
-  if(hash) {
-    this.tree[intAt(hash, depth)] = hash
-    this.pre = hash.substring(0, depth)
-  }
+  this.length = 0
   this.depth = depth || 0
   this._digest = false
+  this.leaf = false
 }
 
 var proto = Merkle.prototype
@@ -24,17 +22,35 @@ function intAt(hash, depth) {
 }
 
 proto.update = function (hash) {
-  this._digest = false
-  if(this.pre == null)
-    this.pre = hash.substring(0, this.depth)
 
-  var i = intAt(hash, this.depth), t = this.tree[i]
-  if('string' == typeof t) {
-    this.tree[i] = new Merkle(this.depth + 1, t).update(hash)
-  } else if(t)
+  if(0 === this.length) {
+    this.leaf = true
+    this._digest = true
+    this.pre = hash.substring(0, this.depth)
+    this.hash = hash 
+    this.length = 1
+    return this
+  }
+
+  var _hash = this.hash
+  this._digest = false
+  this.hash = null
+
+  if(this.leaf) {
+    this.tree[intAt(_hash, this.depth)] = new Merkle(this.depth + 1).update(_hash)
+    this.leaf = false
+  }
+
+
+  var i = intAt(hash, this.depth)
+  var t = this.tree[i]
+ 
+  if(!t) {
+    this.tree[i] = new Merkle(this.depth + 1).update(hash)
+    this.length ++
+  } else {
     this.tree[i].update(hash)
-  else
-    this.tree[i] = hash
+  }
 
   return this
 }
@@ -53,13 +69,15 @@ proto.digest = function () {
 
   var h = crypto.createHash('sha1')
 
+
   for(var i = 0; i < 16; i ++) {
     var t = this.tree[i]
     //console.log(this.tree)
-    if('string' === typeof t)
-      h.update(t, 'hex')
-    else if(t)
+    if(t) {
+      if(!t.digest())
+        throw new Error('no digest')
       h.update(t.digest(), 'hex')
+    }
   }
 
   this._digest = true
@@ -71,6 +89,8 @@ proto.prefix = function () {
 }
 
 proto.toJSON = function () {
+  if(this.leaf)
+    return this.hash
   return {
     pre: this.prefix(),
     hash: this.digest(),
@@ -93,10 +113,8 @@ proto.leaves = function (a) {
   a = a || []
 
   this.tree.forEach(function (o) {
-    if('string' === typeof o)
-      a.push(o)
-    else
-      o.leaves(a)
+    if(o.leaf) a.push(o.hash)
+    else       o.leaves(a)
   })
   return a
 }
@@ -129,12 +147,6 @@ proto.has = function (hash) {
   if(t === hash)
     return true
   return t.has(hash)
-}
-
-function flatten (a) {
-  return a.reduce(function (a, b) {
-    return a.concat(b)
-  }, [])
 }
 
 proto.expand = function () {
