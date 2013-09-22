@@ -1,4 +1,3 @@
-
 var crypto = require('crypto')
 
 function Merkle (depth, hash) {
@@ -16,8 +15,10 @@ function Merkle (depth, hash) {
 var proto = Merkle.prototype
 
 function intAt(hash, depth) {
+
   //parse 'a' as 10
   var i = hash.charCodeAt(depth) - 87
+
   //but if it was a number, make it count from 0
   return (i < 0) ? i + 39 : i
 }
@@ -34,6 +35,7 @@ proto.update = function (hash) {
     this.tree[i].update(hash)
   else
     this.tree[i] = hash
+
   return this
 }
 
@@ -51,22 +53,13 @@ proto.digest = function () {
 
   var h = crypto.createHash('sha1')
 
-  if(false) {
-    this.tree.forEach(function (t) {
-      if('string' === typeof t)
-        h.update(t, 'hex')
-      else if(t != null)
-        h.update(t.digest(), 'hex')
-    })
-  } else {
-    for(var i = 0; i < 16; i ++) {
-      var t = this.tree[i]
-      //console.log(this.tree)
-      if('string' === typeof t)
-        h.update(t, 'hex')
-      else if(t)
-        h.update(t.digest(), 'hex')
-    }
+  for(var i = 0; i < 16; i ++) {
+    var t = this.tree[i]
+    //console.log(this.tree)
+    if('string' === typeof t)
+      h.update(t, 'hex')
+    else if(t)
+      h.update(t.digest(), 'hex')
   }
 
   this._digest = true
@@ -78,7 +71,6 @@ proto.prefix = function () {
 }
 
 proto.toJSON = function () {
-
   return {
     pre: this.prefix(),
     hash: this.digest(),
@@ -99,10 +91,6 @@ Merkle.tree = function (a) {
 //recreate the array used to create the tree.
 proto.leaves = function (a) {
   a = a || []
-/*  if(!this.last) {
-    a.push(this.hash)
-    return a
-  }*/
 
   this.tree.forEach(function (o) {
     if('string' === typeof o)
@@ -116,45 +104,52 @@ proto.leaves = function (a) {
 //iterate down the tree, and find the branch that matches this tree.
 proto.subtree = function (prefix) {
 
-  if(this.matchesPrefix(prefix) && this.depth == prefix.length)
+  if(this.depth == prefix.length && prefix == this.pre)
     return this
+
   var i = intAt(prefix, this.depth)
+  if('string' === typeof this.tree[i])
+    return this.tree[i]
   if(this.tree[i])
     return this.tree[i].subtree(prefix)
-  else {
-    console.log('nomatch', prefix, this.depth)
-    return null
-  }
+
+  console.log('nomatch', prefix, this.depth)
+  return null
 }
 
 proto.top = function () {
-  return ['', this.digest()]
+  return this.digest()
 }
 
-proto.diff = function (pair) {
-  var prefix = pair[0]
-  var hash = pair[1]
-  if(hash === this.digest())
-    return []
-  var self = this
-  var tree = this.subtree(prefix)
-  var a = []
-  console.log(this.tree)
-  this.tree.forEach(function (e) {
-    if('string' == typeof e)
-      return [e.substring(0, self.depth + 1), e]    
-    return a.push([e.prefix(), e.digest()])
+proto.has = function (hash) {
+  var i = intAt(hash, this.depth)
+  var t = this.tree[i]
+  if(!t)
+    return false
+  if(t === hash)
+    return true
+  return t.has(hash)
+}
+
+function flatten (a) {
+  return a.reduce(function (a, b) {
+    return a.concat(b)
+  }, [])
+}
+
+proto.expand = function () {
+  var a = {}
+  var d = this.depth
+  this.tree.forEach(function (hash) {
+    if('string' === typeof hash)
+      a[hash.substring(0, d + 1)] = hash
+    else
+      a[hash.pre] = hash.digest()
   })
+
   return a
 }
 
-Merkle.diff2 = function (a, b) {
-  var check = [a.top()]
-  var _check = []
-  check.forEach(function (e) {
-    _check = _check.concat(proto.diff(e))
-  }) 
-}
 
 module.exports = Merkle
 
