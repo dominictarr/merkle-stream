@@ -27,13 +27,16 @@ function hash (n) {
 console.log('N, t, N/t, hash')
 
 var _t =  1
-var sqrt2 = Math.pow(2, 0.25)
+var sqrt2 = Math.pow(2, .5)
 var N = 1, j = 0
 var a = []
 
+//var g = new Merkle()
 while(N < (1 << 21)) {
-  while(a.length <= N)
+  while(j <= N) {
     a.push(hash(j++))
+    //g.update(hash(j++))
+  }
   var start = Date.now()
   var m = 0, g
   while(Date.now() === start) {
@@ -43,7 +46,7 @@ while(N < (1 << 21)) {
   
   var t = Date.now() - start || 1
   var d = g.digest()
-  console.log([a.length, t/m, a.length/(t/m), d].join(', '))
+  console.log([j, t, j/t, d].join(', '))
   _t = t
   var _N = N
   while(N < _N + 1)
