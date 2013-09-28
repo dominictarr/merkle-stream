@@ -6,23 +6,17 @@ var hash   = u.hash
 var tape   = require('tape')
 var table  = u.table
 
-function flatten (a) {
-  return a.reduce(function (a, b) {
-    return a.concat(b)
-  }, [])
-}
-
-tape('diff', function (t) {
+tape('stream1', function (t) {
   var ary = table(4)
   var waiting = []
   var sending = []
-  var m = Merkle.tree(ary)
-  var n = Merkle.tree(ary)
+  var A = Merkle.tree(ary)
+  var B = Merkle.tree(ary)
   var h = hash('11')
-  n.update(h)
+  B.update(h)
 
-  var a = createStream(n)
-  var b = createStream(m)
+  var a = createStream(A)
+  var b = createStream(B)
 
   a.on('send_branch', function (pre, hash) {
     sending.push({pre: pre, hash: hash})
@@ -38,6 +32,46 @@ tape('diff', function (t) {
   t.deepEqual(waiting, sending)
   console.log('waiting', waiting)
 
-  t.end()
+  a.on('sync', function (hash) {
+    t.equal(A.digest(), B.digest())
+    t.end()
+  })
 
+  t.notEqual(A.digest(), B.digest())
+  b.send(h, '11')
+
+})
+
+tape('stream2', function (t) {
+
+  var ary = table(4)
+  var waiting = []
+  var sending = []
+  var A = Merkle.tree(ary)
+  var B = Merkle.tree(ary)
+  var h = hash('11')
+  var h2 = hash('12')
+  B.update(h)
+  A.update(h2)
+
+  var a = createStream(A)
+  var b = createStream(B)
+
+  a.pipe(b).pipe(a)
+  //start immediately
+  a.resume(); b.resume()
+
+  var n = 2
+  a.on('sync', next)
+  b.on('sync', next)
+
+  t.notEqual(A.digest(), B.digest())
+  b.send(h, '11')
+  a.send(h2, '12')
+
+  function next () {
+    if(--n) return
+    t.equal(A.digest(), B.digest())
+    t.end()
+  }
 })
