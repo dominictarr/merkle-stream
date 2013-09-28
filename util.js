@@ -5,6 +5,10 @@
 
 var crypto = require('crypto')
 function hash(x, enc) {
+  if('number' === typeof x) {
+    x = x.toString(16)
+    x = '' + (x.length % 2 ? '0' + x : x)
+  }
   return crypto.createHash('sha1').update(x, 'hex').digest('hex')
 }
 exports.hash = hash
