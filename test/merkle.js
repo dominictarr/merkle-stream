@@ -19,6 +19,30 @@ tape('correct leaves', function (t) {
   t.end()
 })
 
+tape('leaf', function (t) {
+
+  var a = table(0)
+
+  t.equal(a.length, 1)
+  var m = Merkle.tree(a)
+
+  t.deepEqual(m.leaves(), a)
+//  t.equal(m.digest(), "67d49ee3e0571a9c80dafad5ac95ba3ea04b7340")
+  //t.deepEqual(m.toJSON(), expected[4])
+  t.end()
+})
+
+
+tape('idempotent', function (t) {
+  var m = new Merkle()
+  m.update("67d49ee3e0571a9c80dafad5ac95ba3ea04b7340")
+  t.equal(m.digest(), "67d49ee3e0571a9c80dafad5ac95ba3ea04b7340")
+  m.update("67d49ee3e0571a9c80dafad5ac95ba3ea04b7340")
+  t.equal(m.digest(), "67d49ee3e0571a9c80dafad5ac95ba3ea04b7340")
+  t.end()
+})
+
+
 tape('random input', function (t) {
   var a = table(4).sort(function (a) {
     return Math.random() - 0.5
