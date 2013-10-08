@@ -22,9 +22,8 @@ module.exports = function (_hash) {
       s.on('send_branch', function (pre, h) {
         var t = tree.subtree(pre)
         var l = t.leaves()
-        console.log('TO SEND', l)
         l.forEach(function (key) {
-          console.log('>>>', pre, key)
+          console.error('>>>', pre, key)
           
           if(set[key])
             s.send(key, set[key])
@@ -33,8 +32,8 @@ module.exports = function (_hash) {
           console.log('.')
         })
       })
-      s.on('recieve', function (key, obj) {
-        console.log('<<<', key, obj)
+      s.on('receive', function (key, obj) {
+        console.error('<<<', key, obj)
         var _key = hash(obj)
         if(_key !== key)
           s.emit('error',

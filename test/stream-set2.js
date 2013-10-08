@@ -1,18 +1,14 @@
-
 var Set = require('./set')
 var tape = require('tape')
 var u = require('../util')
 
-tape('stream-set, small', function (t) {
+tape('stream-set, less small', function (t) {
   var s = Set()
   var z = Set()
   for(var i = 0; i < 16; i++)
     s.add(i), z.add(i)
-  for(var i = 0; i < 4; i++)
+  for(var i = 0; i < 8; i++)
     s.add(2 * i + 16), z.add(2 * i + 17)
-
-  console.log('S', JSON.stringify(s.tree.toJSON(), null, 2))
-  console.log('Z', JSON.stringify(z.tree.toJSON(), null, 2))
 
     var ss = s.createStream()
     var zs = z.createStream()
@@ -22,6 +18,19 @@ tape('stream-set, small', function (t) {
 
     t.deepEqual(s.tree.leaves(), z.tree.leaves())
     t.equal(s.tree.digest(), z.tree.digest())
+
+    for(var k in s.set)
+      if(z.set[k] == null)
+        console.log('z is missing', k, s.set[k])
+
+    for(var k in z.set)
+      if(s.set[k] == null)
+        console.log('s is missing', k, z.set[k])
+
+    t.deepEqual(Object.keys(z.set).length, Object.keys(s.set).length)
+
+    t.deepEqual(Object.keys(z.set).sort(), Object.keys(s.set).sort())
+    
     t.end()
 })
 
