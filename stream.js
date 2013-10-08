@@ -4,6 +4,10 @@ function isString (s) {
   return 'string' === typeof s
 }
 
+function isObject (o) {
+  return o && 'object' == typeof o
+}
+
 module.exports = function (merkle) {
 
   // how to detect when the two sides are in sync?
@@ -35,7 +39,6 @@ module.exports = function (merkle) {
     merkle.update(hash)
     //hmm, this is overkill actually,
     //but it could be used to make a progess bar.
-    console.log('get?')
     var tree = merkle.get(hash)
     var pre = tree.pre, h
     do {
@@ -53,14 +56,8 @@ module.exports = function (merkle) {
 
     //if there are no more waiting messages,
     //then emit sync!
-    console.log('sync?')
     d.emit('sync', merkle.digest())
   }
-
-  d.on('await_branch', function (pre, hash) {
-//
-
-  })
 
   d.on('_data', function (data) {
     //this occurs only on the top hash.
@@ -80,35 +77,35 @@ module.exports = function (merkle) {
       var tree = merkle.subtree(pre)
 
       var a = []
-      if(tree.leaf) {
-        console.log('LEAF', data)
-      } 
       tree.tree.forEach(function (e) {
         var p = e.prefix()
         var h = hashes[p]
         if(h) {
-          if(e.digest() === h) {
-            console.log('matches', h)
+          if(isString(h)) {
+            // other side is a leaf,
+            // so send the entire branch,
+            // except that leaf (if you have it)
+            if(h !== e.digest())
+              d.emit('send_branch', e.prefix(), e.digest())
+            else
+              d.emit('branch_sync', p, h)
+          } else if (isObject(h) && e.digest() === h.hash) {
             //mark synced branches
             e.sync = true
-            d.emit('branch_sync', p, h)
+            d.emit('branch_sync', p, h.hash)
           } else {
-            console.log('different', e.prefix(), e.digest())
             //how to mark a different item?
             if(e.leaf) {
-              console.log(data)
-              console.log('DIFF LEAF', p, h, e.digest())
-              // what if I just sent the key like this?
-              d._data([e.prefix, e.digest()])
-              // what if the subtree actually includes this hash?
-              // other side should send everything except this object.
-              throw new Error('not implemented yet. different with leaf')
+              // if you receive a tree with this leaf,
+              // just do nothing, because the other side have also received a tree
+              // I think?
+              // NEED MORE TESTS
             }
-            d._data([e.prefix(), e.expand()])
+            else
+              d._data([e.prefix(), e.expand()])
           }
           delete hashes[p]
         } else {
-          console.log('SEND', e.prefix(), e.digest())
           //this branch will be in sync, once it's recieved on the other side.
           e.sync = true
           d.emit('send_branch', e.prefix(), e.digest())
@@ -131,12 +128,11 @@ module.exports = function (merkle) {
         tree._expect(k, hashes[k], function (pre, hash) {
           d.emit('branch_sync', pre, hash)
         })
-        console.log('AWAIT', k, hashes[k])
         d.emit('await_branch', k, hashes[k])
       }
     } else if(data.key) {
       d.recieve(data.key, data.value)
-      d.emit('recieve', data.key, data.value)
+      d.emit('receive', data.key, data.value)
     }
   })
 
