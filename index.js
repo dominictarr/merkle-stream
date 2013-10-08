@@ -173,10 +173,11 @@ proto.expand = function () {
   var a = {}
   var d = this.depth
   this.tree.forEach(function (hash) {
-    if('string' === typeof hash)
-      a[hash.substring(0, d + 1)] = {leaf: hash}
-    else
+    console.log(hash)
+    if(hash.leaf)
       a[hash.pre] = hash.digest()
+    else
+      a[hash.pre] = {hash: hash.digest()/*, depth: ? */}
   })
 
   return a
