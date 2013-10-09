@@ -173,13 +173,11 @@ proto.expand = function () {
   var a = {}
   var d = this.depth
   this.tree.forEach(function (hash) {
-    console.log(hash)
     if(hash.leaf)
       a[hash.pre] = hash.digest()
     else
       a[hash.pre] = {hash: hash.digest()/*, depth: ? */}
   })
-
   return a
 }
 
@@ -198,5 +196,3 @@ if(!module.parent) {
   var m = Merkle.tree(a)
   console.log(JSON.stringify(m, null, 2))
 }
-
-
