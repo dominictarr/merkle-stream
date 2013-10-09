@@ -2,6 +2,10 @@ var Merkle = require('../')
 var createStream = require('../stream')
 var hash = require('../util').hash
 
+function isDefined (v) {
+  return 'undefined' !== typeof v
+}
+
 module.exports = function (_hash) {
   var set = {}
   var tree = new Merkle()
@@ -25,7 +29,7 @@ module.exports = function (_hash) {
         l.forEach(function (key) {
           console.error('>>>', pre, key)
           
-          if(set[key])
+          if(isDefined(set[key]))
             s.send(key, set[key])
           else
             console.error('do not have branch:'+ key)
