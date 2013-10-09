@@ -8,6 +8,14 @@ function isObject (o) {
   return o && 'object' == typeof o
 }
 
+// eventually you get to a point where you
+// know that seeing da39a3ee5e...
+// means you have a bug.
+
+var EMPTY = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+
+// that is the hash of the empty string.
+
 module.exports = function (merkle) {
 
   // how to detect when the two sides are in sync?
@@ -35,7 +43,7 @@ module.exports = function (merkle) {
     d._data({key: hash, value: obj})
   }
 
-  d.recieve = function (hash) {
+  d.receive = function (hash) {
     merkle.update(hash)
     //hmm, this is overkill actually,
     //but it could be used to make a progess bar.
@@ -62,10 +70,11 @@ module.exports = function (merkle) {
   d.on('_data', function (data) {
     //this occurs only on the top hash.
     if(isString(data)) {
-
       if(merkle.digest() == data) {
         d.emit('sync', data)
-      } else {
+      } else if(data === EMPTY) {
+        d.emit('send_branch', merkle.prefix(), merkle.digest())        
+      } else if(merkle.digest() !== EMPTY) {
         d.target = data
         d.emit('diff', '')
         d._data(['', merkle.expand()])
@@ -77,42 +86,42 @@ module.exports = function (merkle) {
       var tree = merkle.subtree(pre)
 
       var a = []
-      tree.tree.forEach(function (e) {
-        var p = e.prefix()
-        var h = hashes[p]
-        if(h) {
-          if(isString(h)) {
-            // other side is a leaf,
-            // so send the entire branch,
-            // except that leaf (if you have it)
-            if(h !== e.digest())
-              d.emit('send_branch', e.prefix(), e.digest())
-            else
-              d.emit('branch_sync', p, h)
-          } else if (isObject(h) && e.digest() === h.hash) {
-            //mark synced branches
-            e.sync = true
-            d.emit('branch_sync', p, h.hash)
-          } else {
-            //how to mark a different item?
-            if(e.leaf) {
-              // if you receive a tree with this leaf,
-              // just do nothing, because the other side have also received a tree
-              // I think?
-              // NEED MORE TESTS
+      if(tree)
+        tree.tree.forEach(function (e, k) {
+          var p = e.prefix()
+          var h = hashes[p]
+          if(h) {
+            if(isString(h)) {
+              // other side is a leaf,
+              // so send the entire branch,
+              // except that leaf (if you have it)
+              if(h !== e.digest())
+                d.emit('send_branch', e.prefix(), e.digest())
+              else
+                d.emit('branch_sync', p, h)
+            } else if (isObject(h) && e.digest() === h.hash) {
+              //mark synced branches
+              e.sync = true
+              d.emit('branch_sync', p, h.hash)
+            } else {
+              //how to mark a different item?
+              if(e.leaf) {
+                // if you receive a tree with this leaf,
+                // just do nothing, because the other side have also received a tree
+                // I think?
+                // NEED MORE TESTS
+              }
+              else
+                d._data([e.prefix(), e.expand()])
             }
-            else
-              d._data([e.prefix(), e.expand()])
+            delete hashes[p]
+          } else {
+            //this branch will be in sync, once it's recieved on the other side.
+            e.sync = true
+            d.emit('send_branch', e.prefix(), e.digest())
           }
-          delete hashes[p]
-        } else {
-          //this branch will be in sync, once it's recieved on the other side.
-          e.sync = true
-          d.emit('send_branch', e.prefix(), e.digest())
-        }
-      })
+        })
 
-      tree.sync = 0
       for(var k in hashes) {
         //hmm... use await to detect when everything has been replicated?
         //create the Merkle node already,
@@ -131,7 +140,7 @@ module.exports = function (merkle) {
         d.emit('await_branch', k, hashes[k])
       }
     } else if(data.key) {
-      d.recieve(data.key, data.value)
+      d.receive(data.key, data.value)
       d.emit('receive', data.key, data.value)
     }
   })
