@@ -57,7 +57,6 @@ module.exports = function (merkle) {
     var pre = tree.pre, h
     do {
       if(h = d.waiting[pre]) {
-//        console.log('SYNC?', pre, h, merkle.subtree(pre).digest())
         if(hash === merkle.subtree(pre).digest()) {
           delete d.waiting[pre]
           break;
@@ -66,13 +65,11 @@ module.exports = function (merkle) {
       pre = pre.substring(0, pre.length - 1)
     } while(pre.length);
 
-    console.log(Object.keys(d.waiting))
     for(var k in d.waiting)
       return
 
     //if there are no more waiting messages,
     //then emit sync!
-    console.log('SYNC!', merkle.digest())
     d.emit('sync', merkle.digest())
   }
 
@@ -144,12 +141,6 @@ module.exports = function (merkle) {
         //when inserting children, don't update their 
 
         d.emit('await_branch', k, hashes[k])
-
-        //should never happen!
-        if(k == 'null')
-          console.log(hashes)
-
-        d.emit('await_branch', k, hashes[k])
       }
     } else if(data.key) {
       d.receive(data.key, data.value)
@@ -158,10 +149,6 @@ module.exports = function (merkle) {
   }
 
   d.on('await_branch', function (k, hash) {
-    if(k == null || k == 'null') {
-    
-      throw new Error('null prefix')
-    }
     d.waiting[k] = hash
   })
 
