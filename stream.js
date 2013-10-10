@@ -35,6 +35,12 @@ module.exports = function (merkle) {
   // and could clone the other tree as you work your way up it,
   // without cloning the parts that are known to be shared...
 
+  // when a branch is exchanged,
+  // if two subbranches are equal, that portion is in sync.
+  // if you are missing a branch, wait for that digest.
+  // if you have an extra branch, send that subbranch.
+  // if a subbranch is not equal, expand that sub branch.
+
   var d = duplex()
 
   d.waiting = {}
@@ -45,8 +51,8 @@ module.exports = function (merkle) {
 
   d.receive = function (hash) {
     merkle.update(hash)
-    //hmm, this is overkill actually,
-    //but it could be used to make a progess bar.
+    // we need to know when the replication is complete,
+    // if we are serious about comparing sets.
     var tree = merkle.get(hash)
     var pre = tree.pre, h
     do {
