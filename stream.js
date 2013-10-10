@@ -73,7 +73,7 @@ module.exports = function (merkle) {
     d.emit('sync', merkle.digest())
   }
 
-  d.on('_data', function (data) {
+  function onData(data) {
     //this occurs only on the top hash.
     if(isString(data)) {
       if(merkle.digest() == data) {
@@ -149,7 +149,12 @@ module.exports = function (merkle) {
       d.receive(data.key, data.value)
       d.emit('receive', data.key, data.value)
     }
-  })
+  }
+
+  var queue = []
+  var onQueue = queue.push.bind(queue)
+  d.on('_data', onQueue)
+
 
   // and then stream the actual data somehow...
   // one easy way would just be to put the merkle tree inside
@@ -165,6 +170,13 @@ module.exports = function (merkle) {
     if(s === false) return d._started = false
     if(d._started) return
     d._started = true
+
+    while(queue.length)
+      onData(queue.shift())
+
+    d.removeListener('_data', onQueue)
+    d.on('_data', onData)
+
     d._data(merkle.digest())
     return d
   }
