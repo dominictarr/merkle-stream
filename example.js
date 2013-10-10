@@ -26,7 +26,7 @@ module.exports = function (_hash) {
       return this
     },
     createStream: function () {
-      var s = createStream(tree)
+      var s = createStream(tree).start()
       s.on('send_branch', function (pre, h) {
         var t = tree.subtree(pre)
         var l = t.leaves()

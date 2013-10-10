@@ -159,6 +159,20 @@ module.exports = function (merkle) {
   // otherwise, hmm, maybe just expose a send method on the stream?
   // so that other data can be sent?
 
-  d._data(merkle.digest())
+  d._started = null
+
+  d.start = function (s) {
+    if(s === false) return d._started = false
+    if(d._started) return
+    d._started = true
+    d._data(merkle.digest())
+    return d
+  }
+
+  process.nextTick(function () {
+    if(d.started !== false)
+      d.start()
+  })
+
   return d
 }
