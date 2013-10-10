@@ -1,20 +1,19 @@
 {
-  "name": "pull-merkle",
-  "description": "",
+  "name": "merkle",
+  "description": "A base for creating merkle tree replication",
   "version": "0.0.1",
-  "homepage": "https://github.com/dominictarr/pull-merkle",
+  "homepage": "https://github.com/dominictarr/merkle",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/pull-merkle.git"
+    "url": "git://github.com/dominictarr/merkle.git"
   },
   "dependencies": {
-    "pull-stream": "~2.20.1",
     "shasum": "~1.0.0",
-    "pull-window": "~2.1.2",
-    "tape": "~1.1.0",
     "duplex": "~1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "~1.1.0"
+  },
   "scripts": {
     "test": "set -e; for t in test/*.js; do node $t; done"
   },
