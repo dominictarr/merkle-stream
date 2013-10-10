@@ -1,11 +1,11 @@
 {
-  "name": "merkle",
+  "name": "merkle-stream",
   "description": "A base for creating merkle tree replication",
   "version": "1.0.1",
-  "homepage": "https://github.com/dominictarr/merkle",
+  "homepage": "https://github.com/dominictarr/merkle-stream",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/merkle.git"
+    "url": "git://github.com/dominictarr/merkle-stream.git"
   },
   "dependencies": {
     "duplex": "~1.0.0"
