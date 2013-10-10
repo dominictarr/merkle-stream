@@ -57,6 +57,7 @@ module.exports = function (merkle) {
     var pre = tree.pre, h
     do {
       if(h = d.waiting[pre]) {
+//        console.log('SYNC?', pre, h, merkle.subtree(pre).digest())
         if(hash === merkle.subtree(pre).digest()) {
           delete d.waiting[pre]
           break;
@@ -65,11 +66,13 @@ module.exports = function (merkle) {
       pre = pre.substring(0, pre.length - 1)
     } while(pre.length);
 
+    console.log(Object.keys(d.waiting))
     for(var k in d.waiting)
       return
 
     //if there are no more waiting messages,
     //then emit sync!
+    console.log('SYNC!', merkle.digest())
     d.emit('sync', merkle.digest())
   }
 
@@ -140,9 +143,12 @@ module.exports = function (merkle) {
 
         //when inserting children, don't update their 
 
-        tree._expect(k, hashes[k], function (pre, hash) {
-          d.emit('branch_sync', pre, hash)
-        })
+        d.emit('await_branch', k, hashes[k])
+
+        //should never happen!
+        if(k == 'null')
+          console.log(hashes)
+
         d.emit('await_branch', k, hashes[k])
       }
     } else if(data.key) {
@@ -151,10 +157,17 @@ module.exports = function (merkle) {
     }
   }
 
+  d.on('await_branch', function (k, hash) {
+    if(k == null || k == 'null') {
+    
+      throw new Error('null prefix')
+    }
+    d.waiting[k] = hash
+  })
+
   var queue = []
   var onQueue = queue.push.bind(queue)
   d.on('_data', onQueue)
-
 
   // and then stream the actual data somehow...
   // one easy way would just be to put the merkle tree inside
@@ -167,8 +180,8 @@ module.exports = function (merkle) {
   d._started = null
 
   d.start = function (s) {
-    if(s === false) return d._started = false
-    if(d._started) return
+    if(s === false) return d._started = false, d
+    if(d._started) return d
     d._started = true
 
     while(queue.length)
@@ -176,7 +189,6 @@ module.exports = function (merkle) {
 
     d.removeListener('_data', onQueue)
     d.on('_data', onData)
-
     d._data(merkle.digest())
     return d
   }
@@ -188,3 +200,4 @@ module.exports = function (merkle) {
 
   return d
 }
+

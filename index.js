@@ -8,9 +8,9 @@ function Merkle (depth) {
   this.depth = depth || 0
   this._digest = false
   this.leaf = false
-  this.target = null
+  //this.target = null
   this.sync = false
-  this._onSync = null
+  //this._onSync = null
 }
 
 
@@ -42,11 +42,12 @@ proto.update = function (hash) {
     this.hash = hash 
     this.length = 1
 
-    if(this.target && this.target == this.digest()) {
-      this.target = null
-      this.sync = true
-      this._onSync(this.pre, this.digest())
-    }
+//    if(this.target && this.target == this.digest()) {
+//      this.target = null
+//      this.sync = true
+//      this._onSync(this.pre, this.digest())
+//    }
+
     return this
   }
   var _hash = this.hash
@@ -71,11 +72,11 @@ proto.update = function (hash) {
     this.tree[i].update(hash)
   }
 
-  if(this.target && this.target == this.digest()) {
-    this.target = null
-    this.sync = true
-    this._onSync(this.pre, this.digest())
-  }
+//  if(this.target && this.target == this.digest()) {
+//    this.target = null
+//    this.sync = true
+//    this._onSync(this.pre, this.digest())
+//  }
 
   return this
 }
@@ -104,7 +105,8 @@ proto.digest = function () {
 }
 
 proto.prefix = function () {
-  return this.pre//this.firstHash.substring(0, this.depth)
+  return this.pre
+  //this.firstHash.substring(0, this.depth)
 }
 
 proto.toJSON = function () {
@@ -179,12 +181,6 @@ proto.expand = function () {
       a[hash.pre] = {hash: hash.digest()/*, depth: ? */}
   })
   return a
-}
-
-proto._expect = function (pre, hash, cb) {
-  var t = this.tree[this._at(pre)] = new Merkle(this.depth + 1)
-  t.target = hash
-  t._onSync = cb
 }
 
 module.exports = Merkle
