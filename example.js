@@ -6,6 +6,10 @@ function isDefined (v) {
   return 'undefined' !== typeof v
 }
 
+/*
+Example of how to use Merkle for replication.
+*/
+
 module.exports = function (_hash) {
   var set = {}
   var tree = new Merkle()

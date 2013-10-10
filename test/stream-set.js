@@ -1,5 +1,5 @@
 
-var Set = require('./set')
+var Set = require('../example')
 var tape = require('tape')
 var u = require('../util')
 
