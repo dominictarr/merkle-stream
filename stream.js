@@ -182,7 +182,7 @@ module.exports = function (merkle) {
   }
 
   process.nextTick(function () {
-    if(d.started !== false)
+    if(d._started !== false)
       d.start()
   })
 
