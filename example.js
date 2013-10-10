@@ -1,6 +1,6 @@
-var Merkle = require('../')
-var createStream = require('../stream')
-var hash = require('../util').hash
+var Merkle = require('./')
+var createStream = require('./stream')
+var hash = require('./util').hash
 
 function isDefined (v) {
   return 'undefined' !== typeof v
