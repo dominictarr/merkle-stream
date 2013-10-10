@@ -8,7 +8,6 @@
     "url": "git://github.com/dominictarr/merkle.git"
   },
   "dependencies": {
-    "shasum": "~1.0.0",
     "duplex": "~1.0.0"
   },
   "devDependencies": {
