@@ -2,6 +2,13 @@
 var Set = require('../example')
 var tape = require('tape')
 var u = require('../util')
+var through = require('through')
+
+function clone () {
+  return through(function (data) {
+    return this.queue(JSON.parse(JSON.stringify(data)))
+  })
+}
 
 var DEBUG = process.env.DEBUG
 
@@ -28,10 +35,9 @@ function sets (o, n, m) {
     log(JSON.stringify(z.tree.toJSON(), null, 2))
     log('********************************')
 
-
     var ss = s.createStream()
     var zs = z.createStream()
-    ss.pipe(zs).pipe(ss)
+    ss.pipe(clone()).pipe(zs).pipe(clone()).pipe(ss)
 
     ss.on('data', log.bind(console, 'S>'))
     zs.on('data', log.bind(console, 'Z>'))
@@ -56,6 +62,9 @@ tape('stream-set, 100/40/0', sets(100, 40, 0))
 tape('stream-set, 0/40/0', sets(0, 40, 0))
 tape('stream-set, 0/0/6', sets(0, 0, 6))
 tape('stream-set, 0/6/6', sets(0, 6, 6))
+tape('stream-set, 0/7/7', sets(0, 7, 7))
+tape('stream-set, 0/7/7', sets(0, 8, 8))
+tape('stream-set, 0/8/8', sets(0, 8, 8))
 tape('stream-set, 0/50/50', sets(0, 50, 50))
 tape('stream-set, 100/50/50', sets(100, 50, 50))
 
@@ -90,7 +99,7 @@ tape('stream-set, single', function (t) {
 
     var ss = s.createStream()
     var zs = z.createStream()
-    ss.pipe(zs).pipe(ss)
+    ss.pipe(clone()).pipe(zs).pipe(clone()).pipe(ss)
     ss.resume(); zs.resume()
     console.log(s.tree.digest(), z.tree.digest())
 
@@ -110,7 +119,7 @@ tape('stream-set, full vs. empty', function (t) {
     var zs = z.createStream()
     ss.on('data', console.log.bind(null, 'S>'))
     zs.on('data', console.log.bind(null, 'Z>'))
-    ss.pipe(zs).pipe(ss)
+    ss.pipe(clone()).pipe(zs).pipe(clone()).pipe(ss)
     ss.resume(); zs.resume()
     console.log(s.tree.digest(), z.tree.digest())
 
