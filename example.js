@@ -31,17 +31,17 @@ module.exports = function (_hash) {
         var t = tree.subtree(pre)
         var l = t.leaves()
         l.forEach(function (key) {
-          console.error('>>>', pre, key)
+          //console.error('>>>', pre, key)
           
           if(isDefined(set[key]))
             s.send(key, set[key])
           else
             console.error('do not have branch:'+ key)
-          console.log('.')
+          //console.log('.')
         })
       })
       s.on('receive', function (key, obj) {
-        console.error('<<<', key, obj)
+        //console.error('<<<', key, obj)
         var _key = hash(obj)
         if(_key !== key)
           s.emit('error',
