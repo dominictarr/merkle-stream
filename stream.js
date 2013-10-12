@@ -112,10 +112,8 @@ module.exports = function (merkle) {
             } else {
               //how to mark a different item?
               if(e.leaf) {
-                // if you receive a tree with this leaf,
-                // just do nothing, because the other side have also received a tree
-                // I think?
-                // NEED MORE TESTS
+                //I think this may be wrong, but the tests are passing...
+                d.emit('send_branch', e.prefix(), e.digest())
               }
               else
                 d._data([e.prefix(), e.expand()])
