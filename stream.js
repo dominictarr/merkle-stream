@@ -47,6 +47,11 @@ module.exports = function (merkle) {
 
   var d = duplex()
 
+  d.expect = 0
+  d.response = 0
+  d.maybe = 0
+  d.maybes = []
+  d.otherMaybes = []
   d.waiting = {}
 
   d.send = function (hash, obj) {
@@ -77,49 +82,63 @@ module.exports = function (merkle) {
     d.emit('sync', merkle.digest())
   }
 
-  function compare (/*p, */h, e) {
+  function compare (h, e) {
     //this will only happen at root.
     if(isEmpty(h) && isEmpty(e)) {
       d.emit('branch_sync', e.prefix(), h.hash)
     }
     else if(isEmpty(h)) {
-      if(!e.prefix) {
-        console.log(e)
-      }
       d.emit('send_branch', e)
     }
     else if(isEmpty(e)) {
       //do nothing, await branch
-
       d.emit('await_branch', e.prefix(), d.hash)
     }
     else if(isLeaf(h) && isLeaf(e)) {
       //leaves in sync
-      if(h.hash === e.hash) {
+
+      if(h.hash === e.hash)
         d.emit('branch_sync', e.prefix(), h.hash)
-      } else
+      else
         //leaves out of sync, send my leaf
-        d.emit('send_branch', e, h.hash /*exclude*/)
+        d.emit('send_branch', e, h.hash)
     }
     //compare their branch with my leaf
     else if(isBranch(h) && isLeaf(e)) {
-       //do nothing, wait for other side to request the leaf
+      // do nothing, wait for other side to request the leaf
+      // hmm... there is no way to tell if the other doesn't need the leaf,
+      // or if the message just hasn't arrived yet...
+      // so, this situation is a maybe, until you hear something.
+      // but, it's either the leaf or nothing, so it's a bounded quantity.
+      // send one message at the end... when the union is known,
+      // and that is when all the maybes are resolved?
+      d.maybe ++
+      d.maybes.push(e)
+//      console.log('MAYBE', e.digest())
+      d.emit('maybe', e)
     }
     //compare two branches
     else if(isBranch(h) && isBranch(e)) {
       //branches in sync
-      if(h.hash === e.digest())
+      if(h.hash === e.digest()) {
         d.emit('branch_sync', e.prefix(), h.hash)
-      else
+      }
+      else {
         //send next layer.
+        d.expect ++
         d._data([e.prefix(), e.expand()])
+        }
     }
     //compare their leaf with my branch
     else if(isLeaf(h) && isBranch(e)) {
-      d.emit('send_branch', e, h.hash /*exclude*/)
+      d.emit('send_branch', e, h.hash)
       //if I don't have that leaf, request it.
+
+      d.otherMaybes.push(e.has(h.hash))
+
       if(!e.has(h.hash))
-        d._data([e.prefix() /*p*/, null])
+        d._data([e.prefix(), null])
+      
     }
   }
 
@@ -127,6 +146,14 @@ module.exports = function (merkle) {
     //this occurs only on the top hash.
     if(isObject(data) && data.hash) {
       compare(data, merkle)
+      d.response ++ 
+
+      if(d.expect == d.response) {
+        if(d.union) return
+        d.union = true
+        d.emit('union')
+      }
+
     }
     else if(isArray(data)) {
       var pre = data[0]
@@ -137,7 +164,7 @@ module.exports = function (merkle) {
       if(hashes === null) {
         //TODO: find out how often this happens?
         return d.emit('send_branch', tree)
-      }
+     }
 
       if(!tree) //this should never happen
         throw new Error('missing tree requested')
@@ -158,7 +185,12 @@ module.exports = function (merkle) {
           }
         }
       }
-    } else if(data.key) {
+      d.response ++ 
+      if(d.expect === d.response) {
+        d.emit('union', d.expect)
+      }
+    }
+    else if(data.key) {
       d.receive(data.key, data.value)
       d.emit('receive', data.key, data.value)
     }
@@ -192,6 +224,7 @@ module.exports = function (merkle) {
 
     d.removeListener('_data', onQueue)
     d.on('_data', onData)
+    d.expect ++
     d._data({hash: merkle.digest(), count: merkle.count})
     return d
   }
