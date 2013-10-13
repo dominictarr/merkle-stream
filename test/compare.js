@@ -89,74 +89,18 @@ function sets (o, n, m) {
   }
 }
              //   shared/left/right
+tape('stream-set, 0/1/1', sets(0, 1, 1))
 tape('stream-set, 10/4/4', sets(10, 4, 4))
-//tape('stream-set, 100/40/0', sets(100, 40, 0))
-//tape('stream-set, 0/40/0', sets(0, 40, 0))
-//tape('stream-set, 0/0/6', sets(0, 0, 6))
-//tape('stream-set, 0/6/6', sets(0, 6, 6))
-//tape('stream-set, 0/7/7', sets(0, 7, 7))
-//tape('stream-set, 0/7/7', sets(0, 8, 8))
-//tape('stream-set, 0/8/8', sets(0, 8, 8))
-//tape('stream-set, 0/50/50', sets(0, 50, 50))
-//tape('stream-set, 100/50/50', sets(100, 50, 50))
+tape('stream-set, 0/0/1', sets(0, 0, 1))
+tape('stream-set, 1/0/0', sets(1, 0, 0))
+tape('stream-set, 100/40/0', sets(100, 40, 0))
+tape('stream-set, 0/40/0', sets(0, 40, 0))
+tape('stream-set, 0/0/6', sets(0, 0, 6))
+tape('stream-set, 0/6/6', sets(0, 6, 6))
+tape('stream-set, 0/7/7', sets(0, 7, 7))
+tape('stream-set, 0/7/7', sets(0, 8, 8))
+tape('stream-set, 0/8/8', sets(0, 8, 8))
+tape('stream-set, 0/50/50', sets(0, 50, 50))
+tape('stream-set, 100/50/50', sets(100, 50, 50))
 
-//tape('stream-set, small', function (t) {
-//  var s = Set()
-//  var z = Set()
-//  for(var i = 0; i < 16; i++)
-//    s.add(i), z.add(i)
-//  for(var i = 0; i < 4; i++)
-//    s.add(2 * i + 16), z.add(2 * i + 17)
-//
-//    var ss = s.createStream()
-//    var zs = z.createStream()
-//    ss.pipe(zs).pipe(ss)
-//    ss.resume(); zs.resume()
-//    console.log(s.tree.digest(), z.tree.digest())
-//
-//    t.deepEqual(s.tree.leaves(), z.tree.leaves())
-//    t.equal(s.tree.digest(), z.tree.digest())
-//    t.end()
-//})
-//
-//tape('stream-set, single', function (t) {
-//  var s = Set()
-//  var z = Set()
-//    s.add(1)
-//  //  s.add(2)
-//  //  s.add(3)
-//
-//  //console.log('S', JSON.stringify(s.tree.toJSON(), null, 2))
-//  //console.log('Z', JSON.stringify(z.tree.toJSON(), null, 2))
-//
-//    var ss = s.createStream()
-//    var zs = z.createStream()
-//    ss.pipe(clone()).pipe(zs).pipe(clone()).pipe(ss)
-//    ss.resume(); zs.resume()
-//    console.log(s.tree.digest(), z.tree.digest())
-//
-//    t.deepEqual(s.tree.leaves(), z.tree.leaves())
-//    t.equal(s.tree.digest(), z.tree.digest())
-//    t.end()
-//})
-//
-//
-//tape('stream-set, full vs. empty', function (t) {
-//  var s = Set()
-//  var z = Set()
-//  for(var i = 0; i < 1; i++)
-//    s.add(i)
-//
-//    var ss = s.createStream()
-//    var zs = z.createStream()
-//    ss.on('data', console.log.bind(null, 'S>'))
-//    zs.on('data', console.log.bind(null, 'Z>'))
-//    ss.pipe(clone()).pipe(zs).pipe(clone()).pipe(ss)
-//    ss.resume(); zs.resume()
-//    console.log(s.tree.digest(), z.tree.digest())
-//
-//    t.deepEqual(s.tree.leaves(), z.tree.leaves())
-//    t.equal(s.tree.digest(), z.tree.digest())
-//    t.end()
-//})
 
