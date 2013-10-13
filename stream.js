@@ -30,7 +30,7 @@ function isBranch(e) {
 }
 
 function isEmpty(e) {
-  return e.count === 0
+  return !e || e.count === 0
 }
 
 module.exports = function (merkle) {
@@ -41,7 +41,8 @@ module.exports = function (merkle) {
   // if you have an extra branch, send that subbranch.
   // if a subbranch is not equal, expand that sub branch.
 
-  // if you receive a leaf, that is not in a branch (but you have a corisponding branch)
+  // if you receive a leaf, that is not in a branch
+  // (but you have a corrisponding branch)
   // send a request for that leaf.
 
   var d = duplex()
@@ -76,12 +77,15 @@ module.exports = function (merkle) {
     d.emit('sync', merkle.digest())
   }
 
-  function compare (p, h, e) {
+  function compare (/*p, */h, e) {
     //this will only happen at root.
     if(isEmpty(h) && isEmpty(e)) {
-      d.emit('branch_sync', p, h.hash)
+      d.emit('branch_sync', e.prefix(), h.hash)
     }
     else if(isEmpty(h)) {
+      if(!e.prefix) {
+        console.log(e)
+      }
       d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
     }
     else if(isEmpty(e)) {
@@ -92,7 +96,7 @@ module.exports = function (merkle) {
     else if(isLeaf(h) && isLeaf(e)) {
       //leaves in sync
       if(h.hash === e.hash) {
-        d.emit('branch_sync', p, h.hash)
+        d.emit('branch_sync', /*h*/ e.prefix(), h.hash)
       } else
         //leaves out of sync, send my leaf
         d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
@@ -105,7 +109,7 @@ module.exports = function (merkle) {
     else if(isBranch(h) && isBranch(e)) {
       //branches in sync
       if(h.hash === e.hash)
-        d.emit('branch_sync', p, h.hash)
+        d.emit('branch_sync', /*p*/ e.prefix(), h.hash)
       else
         //send next layer.
         d._data([e.prefix(), e.expand()])
@@ -115,14 +119,14 @@ module.exports = function (merkle) {
       d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
       //if I don't have that leaf, request it.
       if(!e.has(h.hash))
-        d._data([p, null])
+        d._data([e.prefix() /*p*/, null])
     }
   }
 
   function onData(data) {
     //this occurs only on the top hash.
     if(isObject(data) && data.hash) {
-      compare('', data, merkle)
+      compare(data, merkle)
     }
     else if(isArray(data)) {
       var pre = data[0]
@@ -135,25 +139,25 @@ module.exports = function (merkle) {
         return d.emit('send_branch', pre, tree.digest())
       }
 
-      var a = []
-      if(tree)
-        tree.tree.forEach(function (e, k) {
-          var p = e.prefix()
-          var h = hashes[p]
+      if(!tree) //this should never happen
+        throw new Error('missing tree requested')
+
+      for(var k = 0; k < 16; k++){
+        var e = tree.tree[k]
+        if(!e) {
+          d.emit('await_branch', pre + k, hashes[k.toString(16)])
+        }
+        else {
+          var h = hashes[k.toString(16)]
           if(h) {
             //comparing two leaves
-            compare(p, h, e)
-            delete hashes[p]
+            compare(h, e)
           } else {
             //this branch will be in sync, once it's recieved on the other side.
             d.emit('send_branch', e.prefix(), e.digest())
           }
-        })
-
-      for(var k in hashes)
-        d.emit('await_branch', k, hashes[k])
-
-    //else receive an object.
+        }
+      }
     } else if(data.key) {
       d.receive(data.key, data.value)
       d.emit('receive', data.key, data.value)
@@ -199,4 +203,3 @@ module.exports = function (merkle) {
 
   return d
 }
-

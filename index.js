@@ -166,12 +166,9 @@ proto.get = function (hash) {
 
 proto.expand = function () {
   var a = {}
-  var d = this.depth
-  this.tree.forEach(function (e) {
-    if(e.leaf)
-      a[e.pre] = {hash: e.digest(), count: 1}
-    else
-      a[e.pre] = {hash: e.digest(), count: e.count}
+  this.tree.forEach(function (e, k) {
+    k = k.toString(16)
+    a[k] = {hash: e.digest(), count: e.count}
   })
   return a
 }
