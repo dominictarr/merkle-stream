@@ -30,12 +30,9 @@ module.exports = function (_hash) {
     createStream: function () {
       var s = createStream(tree).start()
       //so, how do I detect that a comparison is complete?
-      s.on('send_branch', function (pre, h, exclude) {
-        if(exclude)
-          console.log('EXCLUDE', exclude)
-        var t = tree.subtree(pre).leaves().forEach(function (h) {
+      s.on('send_branch', function (tree, exclude) {
+        var t = tree.leaves().forEach(function (h) {
           if(h !== exclude) {
-            console.log('MISSING', h, exclude)
             compare.missing.push(h)
           }
         })

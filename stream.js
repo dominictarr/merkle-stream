@@ -86,7 +86,7 @@ module.exports = function (merkle) {
       if(!e.prefix) {
         console.log(e)
       }
-      d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+      d.emit('send_branch', e)
     }
     else if(isEmpty(e)) {
       //do nothing, await branch
@@ -96,10 +96,10 @@ module.exports = function (merkle) {
     else if(isLeaf(h) && isLeaf(e)) {
       //leaves in sync
       if(h.hash === e.hash) {
-        d.emit('branch_sync', /*h*/ e.prefix(), h.hash)
+        d.emit('branch_sync', e.prefix(), h.hash)
       } else
         //leaves out of sync, send my leaf
-        d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+        d.emit('send_branch', e, h.hash /*exclude*/)
     }
     //compare their branch with my leaf
     else if(isBranch(h) && isLeaf(e)) {
@@ -108,15 +108,15 @@ module.exports = function (merkle) {
     //compare two branches
     else if(isBranch(h) && isBranch(e)) {
       //branches in sync
-      if(h.hash === e.hash)
-        d.emit('branch_sync', /*p*/ e.prefix(), h.hash)
+      if(h.hash === e.digest())
+        d.emit('branch_sync', e.prefix(), h.hash)
       else
         //send next layer.
         d._data([e.prefix(), e.expand()])
     }
     //compare their leaf with my branch
     else if(isLeaf(h) && isBranch(e)) {
-      d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+      d.emit('send_branch', e, h.hash /*exclude*/)
       //if I don't have that leaf, request it.
       if(!e.has(h.hash))
         d._data([e.prefix() /*p*/, null])
@@ -136,7 +136,7 @@ module.exports = function (merkle) {
       //request for just one hash
       if(hashes === null) {
         //TODO: find out how often this happens?
-        return d.emit('send_branch', pre, tree.digest())
+        return d.emit('send_branch', tree)
       }
 
       if(!tree) //this should never happen
@@ -154,7 +154,7 @@ module.exports = function (merkle) {
             compare(h, e)
           } else {
             //this branch will be in sync, once it's recieved on the other side.
-            d.emit('send_branch', e.prefix(), e.digest())
+            d.emit('send_branch', e)
           }
         }
       }

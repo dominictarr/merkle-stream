@@ -27,12 +27,11 @@ module.exports = function (_hash) {
     },
     createStream: function () {
       var s = createStream(tree).start()
-      s.on('send_branch', function (pre, h) {
-        var t = tree.subtree(pre)
-        var l = t.leaves()
-        l.forEach(function (key) {
-          //console.error('>>>', pre, key)
-          
+      s.on('send_branch', function (tree, exclude) {
+
+        tree.leaves().forEach(function (key) {
+          if(key == exclude) return
+//          console.error('>>>', pre, key)
           if(isDefined(set[key]))
             s.send(key, set[key])
           else
