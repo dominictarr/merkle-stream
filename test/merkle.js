@@ -19,6 +19,8 @@ tape('correct leaves', function (t) {
   m.leaves().forEach(function (h) {
     t.ok(m.has(h), 'has:'  + h)
   })
+  t.equal(m.count, a.length)
+  t.equal(m.count, m.leaves().length)
   t.end()
 })
 
@@ -35,6 +37,8 @@ tape('leaf', function (t) {
   m.leaves().forEach(function (h) {
     t.equal(m.has(h), true)
   })
+  t.equal(m.count, a.length)
+  t.equal(m.count, m.leaves().length)
   t.end()
 })
 
@@ -49,6 +53,8 @@ tape('idempotent', function (t) {
     console.log('HAS', m, h)
     t.equal(m.has(h), true)
   })
+  t.equal(m.count, 1)
+  t.equal(m.count, m.leaves().length)
   t.end()
 })
 
@@ -63,6 +69,8 @@ tape('random input', function (t) {
   m.leaves().forEach(function (h) {
     t.equal(m.has(h), true)
   })
+  t.equal(m.count, a.length)
+  t.equal(m.count, m.leaves().length)
   t.end()
 })
 
@@ -81,7 +89,29 @@ tape('subtree', function (t) {
   m.leaves().forEach(function (h) {
     t.equal(m.has(h), true)
   })
+  t.equal(m.count, a.length)
+  t.equal(m.count, m.leaves().length)
   t.end()
 })
 
+
+tape('subtrees have correct count', function (t) {
+  var a = table(6), c = 0
+  var m = Merkle.tree(a)
+
+  t.equal(a.length, m.leaves().length)
+  t.equal(m.count, a.length)
+
+  ;(function check (m) {
+    t.equal(m.count, m.leaves().length)
+    if(!m.leaf)
+      m.tree.forEach(check)
+    else
+      c ++
+  })(m)
+
+  t.equal(a.length, c)
+
+  t.end()
+})
 
