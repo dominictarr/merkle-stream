@@ -5,12 +5,11 @@ function Merkle (depth) {
   this.tree = []
   this.pre = null
   this.length = 0
+  this.count = 0
   this.depth = depth || 0
   this._digest = false
   this.leaf = false
-  //this.target = null
   this.sync = false
-  //this._onSync = null
 }
 
 
@@ -41,21 +40,16 @@ proto.update = function (hash) {
     this.pre = hash.substring(0, this.depth)
     this.hash = hash 
     this.length = 1
-
-//    if(this.target && this.target == this.digest()) {
-//      this.target = null
-//      this.sync = true
-//      this._onSync(this.pre, this.digest())
-//    }
-
-    return this
+    this.count = 1
+    return true
   }
   var _hash = this.hash
 
   if(this.leaf) {
     if(hash === this.hash)
-      return this
-    this.tree[intAt(_hash, this.depth)] = new Merkle(this.depth + 1).update(_hash)
+      return false
+    var u = this.tree[intAt(_hash, this.depth)] = new Merkle(this.depth + 1)
+    u.update(_hash)
     this.leaf = false
   }
 
@@ -66,19 +60,18 @@ proto.update = function (hash) {
   var t = this.tree[i]
  
   if(!t) {
-    this.tree[i] = new Merkle(this.depth + 1).update(hash)
+    t = this.tree[i] = new Merkle(this.depth + 1)
     this.length ++
-  } else {
-    this.tree[i].update(hash)
+    this.count ++
+    t.update(hash)
+    return true
   }
 
-//  if(this.target && this.target == this.digest()) {
-//    this.target = null
-//    this.sync = true
-//    this._onSync(this.pre, this.digest())
-//  }
-
-  return this
+  if(t.update(hash)) {
+    this.count ++
+    return true
+  } else
+    return false
 }
 
 proto.matchesPrefix = function (hash) {
@@ -174,11 +167,11 @@ proto.get = function (hash) {
 proto.expand = function () {
   var a = {}
   var d = this.depth
-  this.tree.forEach(function (hash) {
-    if(hash.leaf)
-      a[hash.pre] = hash.digest()
+  this.tree.forEach(function (e) {
+    if(e.leaf)
+      a[e.pre] = {hash: e.digest(), count: 1}
     else
-      a[hash.pre] = {hash: hash.digest()/*, depth: ? */}
+      a[e.pre] = {hash: e.digest(), count: e.count}
   })
   return a
 }
