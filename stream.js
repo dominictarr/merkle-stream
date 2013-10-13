@@ -16,6 +16,23 @@ var EMPTY = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
 // that is the hash of the empty string.
 
+var isArray = Array.isArray
+function isObject (o) {
+  return o && 'object' === typeof o
+}
+
+function isLeaf(e) {
+  return e.count === 1
+}
+
+function isBranch(e) {
+  return e.count > 1
+}
+
+function isEmpty(e) {
+  return e.count === 0
+}
+
 module.exports = function (merkle) {
 
   // when a branch is exchanged,
@@ -59,20 +76,55 @@ module.exports = function (merkle) {
     d.emit('sync', merkle.digest())
   }
 
+  function compare (p, h, e) {
+    //this will only happen at root.
+    if(isEmpty(h) && isEmpty(e)) {
+      d.emit('branch_sync', p, h.hash)
+    }
+    else if(isEmpty(h)) {
+      d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+    }
+    else if(isEmpty(e)) {
+      //do nothing, await branch
+
+      d.emit('await_branch', e.prefix(), d.hash)
+    }
+    else if(isLeaf(h) && isLeaf(e)) {
+      //leaves in sync
+      if(h.hash === e.hash) {
+        d.emit('branch_sync', p, h.hash)
+      } else
+        //leaves out of sync, send my leaf
+        d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+    }
+    //compare their branch with my leaf
+    else if(isBranch(h) && isLeaf(e)) {
+       //do nothing, wait for other side to request the leaf
+    }
+    //compare two branches
+    else if(isBranch(h) && isBranch(e)) {
+      //branches in sync
+      if(h.hash === e.hash)
+        d.emit('branch_sync', p, h.hash)
+      else
+        //send next layer.
+        d._data([e.prefix(), e.expand()])
+    }
+    //compare their leaf with my branch
+    else if(isLeaf(h) && isBranch(e)) {
+      d.emit('send_branch', e.prefix(), e.digest(), h.hash /*exclude*/)
+      //if I don't have that leaf, request it.
+      if(!e.has(h.hash))
+        d._data([p, null])
+    }
+  }
+
   function onData(data) {
     //this occurs only on the top hash.
-    if(isString(data)) {
-      if(merkle.digest() == data) {
-        d.emit('sync', data)
-      } else if(data === EMPTY) {
-        d.emit('send_branch', merkle.prefix(), merkle.digest())        
-      } else if(merkle.digest() !== EMPTY) {
-        d.target = data
-        d.emit('diff', '')
-        d._data(['', merkle.expand()])
-      }
-
-    } else if(Array.isArray(data)) {
+    if(isObject(data) && data.hash) {
+      compare('', data, merkle)
+    }
+    else if(isArray(data)) {
       var pre = data[0]
       var hashes = data[1]
       var tree = merkle.subtree(pre)
@@ -82,61 +134,26 @@ module.exports = function (merkle) {
         //TODO: find out how often this happens?
         return d.emit('send_branch', pre, tree.digest())
       }
+
       var a = []
       if(tree)
         tree.tree.forEach(function (e, k) {
           var p = e.prefix()
           var h = hashes[p]
           if(h) {
-            if(isString(h)) {
-              // other side is a leaf,
-              // so send the entire branch,
-              // except that leaf (if you have it)
-              if(h !== e.digest()) {
-                d.emit('send_branch', e.prefix(), e.digest(), h /*exclude*/)
-                //if this side does not have h, send a request for that object
-                //this only happens when comparing a branch with a leaf.
-                if(!e.leaf && !~e.leaves().indexOf(h)) {
-                  d._data([p, null])
-                }
-              }
-              else
-                d.emit('branch_sync', p, h)
-            } else if (isObject(h) && e.digest() === h.hash) {
-              //mark synced branches
-              e.sync = true
-              d.emit('branch_sync', p, h.hash)
-            } else {
-              //how to mark a different item?
-              if(e.leaf) {
-                //do not send a leaf, when comparing against a branch.
-                //the other side will request this leaf if it's missing.
-              }
-              else
-                d._data([e.prefix(), e.expand()])
-            }
+            //comparing two leaves
+            compare(p, h, e)
             delete hashes[p]
           } else {
             //this branch will be in sync, once it's recieved on the other side.
-            e.sync = true
             d.emit('send_branch', e.prefix(), e.digest())
           }
         })
 
-      for(var k in hashes) {
-        //hmm... use await to detect when everything has been replicated?
-        //create the Merkle node already,
-        //and mark it's target. then, when it's digest becomes correct,
-        //we will know.
-
-        //then, when we update a branch with an expectation,
-        //after updating it, compute it's digest, to see if it's synced.
-        //if it is, mark as sync, and emit sync_branch
-
-        //when inserting children, don't update their 
-
+      for(var k in hashes)
         d.emit('await_branch', k, hashes[k])
-      }
+
+    //else receive an object.
     } else if(data.key) {
       d.receive(data.key, data.value)
       d.emit('receive', data.key, data.value)
@@ -171,7 +188,7 @@ module.exports = function (merkle) {
 
     d.removeListener('_data', onQueue)
     d.on('_data', onData)
-    d._data(merkle.digest())
+    d._data({hash: merkle.digest(), count: merkle.count})
     return d
   }
 
