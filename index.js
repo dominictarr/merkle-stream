@@ -146,12 +146,12 @@ proto.subtree = function (prefix) {
 }
 
 proto.has = function (hash) {
+  if(this.leaf)
+    return this.digest() === hash
   var i = this._at(hash)
   var t = this.tree[i]
   if(!t)
     return false
-  if(t === hash)
-    return 
   return t.has(hash)
 }
 
