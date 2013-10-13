@@ -18,28 +18,14 @@ var EMPTY = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
 module.exports = function (merkle) {
 
-  // how to detect when the two sides are in sync?
-  // probably the best is to send a message
-  // with the new digest, so each side can check they have
-  // the same data.
-
-  // but when to send that message, exactly?
-  // we should be able to calculate the number of messages
-  // that we expect to see.
-  // could build up a partial tree of the other side,
-  // to track what we are waiting for?
-  // and then, that could be updated as we go back through it...
-
-  // that would mean that each replication needs it's own
-  // tree.., hmm, it's probably fine for now though.
-  // and could clone the other tree as you work your way up it,
-  // without cloning the parts that are known to be shared...
-
   // when a branch is exchanged,
   // if two subbranches are equal, that portion is in sync.
   // if you are missing a branch, wait for that digest.
   // if you have an extra branch, send that subbranch.
   // if a subbranch is not equal, expand that sub branch.
+
+  // if you receive a leaf, that is not in a branch (but you have a corisponding branch)
+  // send a request for that leaf.
 
   var d = duplex()
 
@@ -91,6 +77,11 @@ module.exports = function (merkle) {
       var hashes = data[1]
       var tree = merkle.subtree(pre)
 
+      //request for just one hash
+      if(hashes === null) {
+        //TODO: find out how often this happens?
+        return d.emit('send_branch', pre, tree.digest())
+      }
       var a = []
       if(tree)
         tree.tree.forEach(function (e, k) {
@@ -101,8 +92,14 @@ module.exports = function (merkle) {
               // other side is a leaf,
               // so send the entire branch,
               // except that leaf (if you have it)
-              if(h !== e.digest())
-                d.emit('send_branch', e.prefix(), e.digest())
+              if(h !== e.digest()) {
+                d.emit('send_branch', e.prefix(), e.digest(), h /*exclude*/)
+                //if this side does not have h, send a request for that object
+                //this only happens when comparing a branch with a leaf.
+                if(!e.leaf && !~e.leaves().indexOf(h)) {
+                  d._data([p, null])
+                }
+              }
               else
                 d.emit('branch_sync', p, h)
             } else if (isObject(h) && e.digest() === h.hash) {
@@ -112,8 +109,8 @@ module.exports = function (merkle) {
             } else {
               //how to mark a different item?
               if(e.leaf) {
-                //I think this may be wrong, but the tests are passing...
-                d.emit('send_branch', e.prefix(), e.digest())
+                //do not send a leaf, when comparing against a branch.
+                //the other side will request this leaf if it's missing.
               }
               else
                 d._data([e.prefix(), e.expand()])
