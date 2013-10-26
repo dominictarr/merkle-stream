@@ -49,12 +49,9 @@ module.exports = function (merkle) {
 
   d.expect = 0
   d.response = 0
-  d.maybe = 0
   d.small = 0
-  d.maybes = []
-  d.otherMaybes = []
   d.waiting = {}
-
+  d.request = []
   d.send = function (hash, obj) {
     d._data({key: hash, value: obj})
   }
@@ -100,9 +97,11 @@ module.exports = function (merkle) {
 
       if(h.hash === e.hash)
         d.emit('branch_sync', e.prefix(), h.hash)
-      else
+      else {
+        //d.expect ++
         //leaves out of sync, send my leaf
         d.emit('send_branch', e, h.hash)
+      }
     }
     //compare their branch with my leaf
     else if(isBranch(h) && isLeaf(e)) {
@@ -113,10 +112,6 @@ module.exports = function (merkle) {
       // but, it's either the leaf or nothing, so it's a bounded quantity.
       // send one message at the end... when the union is known,
       // and that is when all the maybes are resolved?
-      d.maybe ++
-      d.maybes.push(e)
-//      console.log('MAYBE', e.digest())
-      d.emit('maybe', e)
     }
     //compare two branches
     else if(isBranch(h) && isBranch(e)) {
@@ -129,7 +124,6 @@ module.exports = function (merkle) {
         d.expect ++
         if(e.count <= 16 && e.count > 1) {
           d.small = (d.small || 0) + 1
-          //console.log(e.leaves())
         }
         d._data([e.prefix(), e.expand()])
         }
@@ -137,12 +131,11 @@ module.exports = function (merkle) {
     //compare their leaf with my branch
     else if(isLeaf(h) && isBranch(e)) {  
       d.emit('send_branch', e, h.hash)
-      //if I don't have that leaf, request it.
+      //if I don't have that leaf, request it after key exchange.
 
-      d.otherMaybes.push(e.has(h.hash))
-
-      if(!e.has(h.hash))
-        d._data([e.prefix(), null])
+      if(!e.has(h.hash)) {
+        d.request.push(h.hash)
+      }
       
     }
   }
@@ -150,15 +143,21 @@ module.exports = function (merkle) {
   function onData(data) {
     //this occurs only on the top hash.
     if(isObject(data) && data.hash) {
+      //compare will queue more requests if necessary.
       compare(data, merkle)
       d.response ++ 
 
       if(d.expect == d.response) {
-        if(d.union) return
         d.union = true
-        d.emit('union')
+        d._data({missing: d.request})
       }
 
+    }
+    else if(isObject(data) && data.missing) {
+      data.missing.forEach(function (hash) {
+        d.emit('send_branch', merkle.get(hash))
+      })
+      d.emit('union')
     }
     else if(isArray(data)) {
       //what if, when the count is small,
@@ -178,6 +177,7 @@ module.exports = function (merkle) {
       var tree = merkle.subtree(pre)
 
       //request for just one hash
+      //DEPRECATED
       if(hashes === null) {
         //TODO: find out how often this happens?
         return d.emit('send_branch', tree)
@@ -204,7 +204,7 @@ module.exports = function (merkle) {
       }
       d.response ++ 
       if(d.expect === d.response) {
-        d.emit('union', d.expect)
+        d._data({missing: d.request})
       }
     }
     else if(data.key) {

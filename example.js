@@ -31,16 +31,13 @@ module.exports = function (_hash) {
 
         tree.leaves().forEach(function (key) {
           if(key == exclude) return
-//          console.error('>>>', pre, key)
           if(isDefined(set[key]))
             s.send(key, set[key])
           else
             console.error('do not have branch:'+ key)
-          //console.log('.')
         })
       })
       s.on('receive', function (key, obj) {
-        //console.error('<<<', key, obj)
         var _key = hash(obj)
         if(_key !== key)
           s.emit('error',
