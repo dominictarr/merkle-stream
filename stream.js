@@ -50,6 +50,7 @@ module.exports = function (merkle) {
   d.expect = 0
   d.response = 0
   d.maybe = 0
+  d.small = 0
   d.maybes = []
   d.otherMaybes = []
   d.waiting = {}
@@ -126,11 +127,15 @@ module.exports = function (merkle) {
       else {
         //send next layer.
         d.expect ++
+        if(e.count <= 16 && e.count > 1) {
+          d.small = (d.small || 0) + 1
+          //console.log(e.leaves())
+        }
         d._data([e.prefix(), e.expand()])
         }
     }
     //compare their leaf with my branch
-    else if(isLeaf(h) && isBranch(e)) {
+    else if(isLeaf(h) && isBranch(e)) {  
       d.emit('send_branch', e, h.hash)
       //if I don't have that leaf, request it.
 
@@ -156,6 +161,18 @@ module.exports = function (merkle) {
 
     }
     else if(isArray(data)) {
+      //what if, when the count is small,
+      //just send the leaves. this would save round trips
+      
+      //if you receive a leafset, but and there are leaves you are missing
+      //you'd need to request them, or say which ones you have...
+      // maybe you could use a white or blacklist to get the right hashes with less bytes?
+
+      // Idea: you can estimate which side has more objects
+      // because hashes are uniformly distributed.
+
+      // test if one side has few hashes and just list them?
+
       var pre = data[0]
       var hashes = data[1]
       var tree = merkle.subtree(pre)
