@@ -44,7 +44,10 @@ var DEBUG = process.env.DEBUG
 
 var log = DEBUG ? console.log : function() {}
 
-module.exports = function sets (o, n, m, sync) {
+module.exports = sets
+
+function sets (o, n, m, sync, d) {
+//  var sync = !async
   return function (t) {
     var s = Set()
     var z = Set()
@@ -76,7 +79,7 @@ module.exports = function sets (o, n, m, sync) {
 
     var ss = s.createStream()
     var zs = z.createStream()
-    var us = false, uz = false, N = 2, sm = 0, zm = 0, sl = 0, zl = 0
+    var us = false, uz = false, N = 2, sm = 0, zm = 0
 
     ss.on('union', function () {
     //  console.log('S UNION!')
@@ -91,31 +94,49 @@ module.exports = function sets (o, n, m, sync) {
       next()
     })
 
-
     ss.on('data', log.bind(console, 'S>'))
     zs.on('data', log.bind(console, 'Z>'))
-    ss.on('data', function (h) {
-      sm ++; sl += JSON.stringify(h).length + 1
-    })
-    zs.on('data', function (h) {
-      zm ++; zl += JSON.stringify(h).length + 1
-    })
+    ss.on('data', function () {sm ++})
+    zs.on('data', function () {zm ++})
 
-    ss
-      .pipe(clone())
-//      .pipe(delay(100))
-      .pipe(zs)
-      .pipe(clone())
-  //    .pipe(delay(100))
-      .pipe(ss)
+    if('number' === typeof d) {
+      ss
+        .pipe(clone())
+        .pipe(delay(d || false))
+        .pipe(zs)
+        .pipe(clone())
+        .pipe(delay(d || false))
+        .pipe(ss)
+    } else {
+      ss
+        .pipe(clone())
+        .pipe(zs)
+        .pipe(clone())
+        .pipe(ss)
+    }
 
     zs.resume()
     ss.resume()
+
+    function next(){
+      if(sync) return
+      if(N < 0)
+        throw new Error('too many unions')
+      if(--N) return
+      console.log('UNION')
+      check()
+    }
+
+    if(sync) check()
 
     function check () {
 
       t.deepEqual(s.missing.sort(), missing_z)
       t.deepEqual(z.missing.sort(), missing_s)
+
+      log('S MISSING', s.missing.sort())
+      log('Z MISSING', z.missing.sort())
+
 
       t.equal(s.expect, s.response)
       t.equal(z.expect, z.response)
@@ -123,8 +144,6 @@ module.exports = function sets (o, n, m, sync) {
       console.log('S maybe/expect', ss.maybe, ss.expect, ss.response)
       console.log('Z maybe/expect', zs.maybe, zs.expect, zs.response)
       console.log('Messages (s/z)', sm, zm)
-      console.log('kilobytes(s/z)', sl/1000, zl/1000)
-      console.log('small    (s/z)', ss.small, zs.small)
       console.log('Nodes    (s/z)', s.tree.count, z.tree.count)
       console.log('MISSING? (s/z)', missing_z.length, missing_s.length)
       console.log('Z maybe/expect', zs.maybe, zs.expect, zs.response)
@@ -141,18 +160,6 @@ module.exports = function sets (o, n, m, sync) {
 
         console.log('********************')
         t.end()
-
-    }
-
-    if(sync) check()  
-
-    function next(){
-      if(sync) return
-      if(N < 0)
-        throw new Error('too many unions')
-      if(--N) return
-      console.log('UNION')
-      check()
     }
   }
 }
