@@ -87,6 +87,6 @@ tape('stream-set, 1/0/0', sets(1, 0, 0))
 tape('stream-set, 100/40/0', sets(100, 40, 0))
 tape('stream-set, 100/40/0', sets(10000, 14, 0))
 tape('stream-set, 100/40/0', sets(100000, 140, 0))
-//tape('stream-set, 0/40/0', sets(0, 40, 0))
-//tape('stream-set, 0/0/6', sets(0, 0, 6))
+tape('stream-set, 0/40/0', sets(0, 40, 0))
+tape('stream-set, 0/0/6', sets(0, 0, 6))
 
