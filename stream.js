@@ -98,7 +98,6 @@ module.exports = function (merkle) {
       if(h.hash === e.hash)
         d.emit('branch_sync', e.prefix(), h.hash)
       else {
-        //d.expect ++
         //leaves out of sync, send my leaf
         d.emit('send_branch', e, h.hash)
       }
@@ -176,13 +175,6 @@ module.exports = function (merkle) {
       var hashes = data[1]
       var tree = merkle.subtree(pre)
 
-      //request for just one hash
-      //DEPRECATED
-      if(hashes === null) {
-        //TODO: find out how often this happens?
-        return d.emit('send_branch', tree)
-     }
-
       if(!tree) //this should never happen
         throw new Error('missing tree requested')
 
@@ -202,7 +194,7 @@ module.exports = function (merkle) {
           }
         }
       }
-      d.response ++ 
+      d.response ++
       if(d.expect === d.response) {
         d._data({missing: d.request})
       }
