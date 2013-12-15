@@ -1,6 +1,6 @@
 var Merkle = require('./')
 var createStream = require('./stream')
-var hash = require('./util').hash
+var _hash = require('./util').hash
 
 function isDefined (v) {
   return 'undefined' !== typeof v
@@ -10,11 +10,11 @@ function isDefined (v) {
 Example of how to use Merkle for replication.
 */
 
-module.exports = function (_hash) {
+module.exports = function (hash) {
   var set = {}
   var tree = new Merkle()
 
-  hash = _hash || hash
+  hash = hash || _hash
 
   return {
     set: set,
