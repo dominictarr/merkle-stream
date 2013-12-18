@@ -130,6 +130,7 @@ function sets (o, n, m, sync, d) {
     if(sync) check()
 
     function check () {
+      console.log(s.missing)
 
       t.deepEqual(s.missing.sort(), missing_z)
       t.deepEqual(z.missing.sort(), missing_s)
@@ -164,3 +165,23 @@ function sets (o, n, m, sync, d) {
   }
 }
 
+function combinations (parts) {
+  var p = parts.slice()
+  if(p.length === 1) {
+    var x = []
+    var m = p[0]
+    while(m --)
+    x.push([m])
+    console.log(x)
+    return x
+  }
+
+//  if(x > 0) combinations(x - 1, y, z)
+//  if(y > 0) combinations(x, y - 1, z)
+//  if(z > 0) combinations(x, y, z - 1)
+//  console.log(x, y, z)
+}
+
+if(!module.parent) {
+  console.log(combinations([2,2]))
+}

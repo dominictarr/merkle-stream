@@ -17,3 +17,5 @@ tape('stream-set, 0/8/8', sets(0, 8, 8, false, 10))
 tape('stream-set, 0/50/50', sets(0, 50, 50, false, 10))
 tape('stream-set, 100/50/50', sets(100, 50, 50), false, 10)
 
+tape('stream-set, 10000/50/50', sets(1000, 50, 50), false, 10)
+

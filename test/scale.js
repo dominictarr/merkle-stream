@@ -24,11 +24,11 @@ function hash (n) {
   return crypto.createHash('sha1').update(n, 'hex').digest('hex')
 }
 
-console.log('N, t, N/t, hash')
+console.log('Input Size (N), Time Taken (ms), Ops/Millisecond (ops/ms), hash')
 
 var _t =  1
 var sqrt2 = Math.pow(2, .5)
-var N = 1, j = 0
+var N = 1000, j = 0
 var a = []
 
 //var g = new Merkle()
